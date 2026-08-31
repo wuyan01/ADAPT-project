@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="utf-8">
+  <meta name="description"
+        content="ADAPT: Agile Diffusion Action Priors for Robust and Steerable Online Text-Driven Humanoid Control">
+  <meta name="keywords" content="humanoid control, diffusion policy, text-driven control, reinforcement learning, Unitree G1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADAPT: Agile Diffusion Action Priors for Robust and Steerable Online Text-Driven Humanoid Control</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="stylesheet" href="./static/css/adapt.css">
+  <!-- TODO: add a favicon, e.g. a cropped frame of the G1 robot -->
+  <!-- <link rel="shortcut icon" href="images.png"> -->
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <script defer src="./static/js/adapt.js"></script>
+</head>
+<body>
+
+
+<!-- ==================== HEADER ==================== -->
+<section class="publication-header">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">ADAPT: Agile Diffusion Action Priors for Robust and Steerable Online Text-Driven Humanoid Control</h1>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://wuyan01.github.io/">Yan Wu</a>,</span>
+            <span class="author-block">
+              <a href="https://breadli428.github.io/">Chenhao Li</a>,</span>
+            <span class="author-block">
+              <a href="https://zkf1997.github.io/">Kaifeng Zhao</a><sup>*</sup>,</span>
+            <span class="author-block">
+              <a href="https://ligengen.github.io/">Gen Li</a><sup>*</sup>,</span>
+            <span class="author-block">
+              <a href="https://rsl.ethz.ch/the-lab/people/person-detail.hutter.html">Marco Hutter</a>,</span>
+            <span class="author-block">
+              <a href="https://vlg.inf.ethz.ch/team/Prof-Dr-Siyu-Tang.html">Siyu Tang</a>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">ETH Zurich, Switzerland</span>
+          </div>
+          <div class="is-size-7 publication-authors">
+            <span class="author-block"><sup>*</sup>Equal contribution</span>
+          </div>
+
+          <!-- TODO: fill in the venue once it is decided -->
+          <!-- <h3 class="is-size-5 conference"><b>CoRL 2026</b></h3> -->
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- arXiv Link. TODO: replace with the real arXiv id -->
+              <span class="link-block">
+                <a href="#"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="./static/paper.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- Video Link. -->
+              <span class="link-block">
+                <a href="https://youtu.be/e1dgFzgg5_M"
+                   target="_blank" rel="noopener"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
+                </a>
+              </span>
+              <!-- Code Link. TODO: point to the released repo -->
+              <span class="link-block">
+                <a href="#"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== TEASER ==================== -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <div class="publication-video">
+          <iframe src="https://www.youtube.com/embed/e1dgFzgg5_M"
+                  title="ADAPT teaser video"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <br>
+
+    <figure class="content has-text-centered">
+      <img src="./static/images/teaser.png" class="is-fullwidth" alt="ADAPT teaser."/>
+      <p class="caption">
+        <b>ADAPT</b> is an end-to-end diffusion-based skill prior that enables interactive text-driven
+        humanoid control with smooth and robust skill transitions, and can be reused for downstream
+        tasks to achieve goal reaching with controllable motion styles.
+      </p>
+    </figure>
+
+    <br>
+
+    <!-- <h2 class="subtitle has-text-centered">
+      <b>ADAPT</b> maps language and proprioception <b>directly to joint actions</b> in closed loop, so a
+      Unitree G1 can follow text commands that change at any moment &mdash; staying balanced, natural, and
+      smooth through every transition.
+    </h2> -->
+  </div>
+</section>
+
+<br>
+<br>
+
+
+<!-- ==================== ABSTRACT ==================== -->
+<section class="hero is-light is-small">
+  <div class="container is-max-desktop">
+    <br>
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            We present <b>ADAPT</b>, an end-to-end framework for interactive, text-conditioned humanoid
+            whole-body control. Unlike dominant text-to-motion pipelines that generate kinematic motions
+            for a separate tracker, ADAPT solves language control with an end-to-end closed-loop control
+            framework, where the robot must continuously respond to changing commands while maintaining
+            balance, natural motion, and smooth transitions. ADAPT learns a diffusion-based action prior
+            from text-labeled humanoid state-action trajectories, enabling diverse motion skills to be
+            directly executed from language commands. To improve long-horizon robustness and smooth prompt
+            switching, we train a lightweight residual reinforcement learning policy on top of the frozen
+            diffusion controller. We further show that the same diffusion policy can be reused as a
+            steerable text-conditioned motion prior for downstream task adaptation. Experiments demonstrate
+            robust language-grounded skill execution, smooth interactive transitions, and style-preserving
+            downstream control.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+</section>
+
+
+<!-- ==================== METHOD ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Method</h2>
+        <div class="content has-text-justified">
+
+          <h4>Key Idea</h4>
+          <p>
+            Interactive language-conditioned humanoid control is a <b>closed-loop dynamic control problem</b>,
+            not a motion generation problem. We therefore train a text-conditioned diffusion policy that maps
+            <b>proprioceptive history + text</b> straight to <b>joint-level actions</b>, together with the
+            future states those actions are expected to produce.
+          </p>
+          <p>
+            Because supervision comes from <b>frame-level</b> BABEL annotations rather than clip-level captions,
+            the policy is trained on precise text-to-motion grounding <i>and</i> on the transition boundaries
+            between behaviors &mdash; exactly the moments an interactive controller has to handle.
+          </p>
+
+          <h4>Key Challenges</h4>
+          <p>
+            <span style="color: #ff0000"><b>Kinematics&ndash;dynamics mismatch</b></span> &ndash; Two-stage pipelines
+            generate a kinematic reference first and track it afterwards. Feasibility is never checked during
+            generation, so under rapid command switching the reference becomes dynamically infeasible &mdash;
+            especially in aerial phases and fast weight shifts.
+            <br><br>
+            <span style="color: #ff0000"><b>Coarse temporal supervision</b></span> &ndash; Existing end-to-end methods
+            train on sequence-level captions, where one description spans a whole clip. The policy never sees
+            rapid intra-sequence command changes, so it can sustain a behavior but not switch on the fly.
+            <br><br>
+            <span style="color: #ff0000"><b>Distribution shift in behavior cloning</b></span> &ndash; Offline BC alone
+            drifts out of the training support during long rollouts and at arbitrary switch times, causing falls.
+          </p>
+
+          <h4>Our Solutions</h4>
+          <p>
+            <span style="color: #0bbe05"><b>Diffusion skill prior over state-actions</b></span> &ndash; An 8-layer causal
+            transformer denoiser predicts joint future actions and proprioceptive states, conditioned on a frozen
+            CLIP text embedding. Per-frame independent noise levels (Diffusion Forcing) match the autoregressive
+            rollout at inference. Two DDIM steps with classifier-free guidance give <b>~2&nbsp;ms</b> inference,
+            enough for <b>50&nbsp;Hz</b> closed-loop deployment.
+            <br><br>
+            <span style="color: #0bbe05"><b>Constrained residual RL correction</b></span> &ndash; A lightweight PPO residual
+            policy corrects the frozen prior's actions. Three constraints keep it from erasing the prior's semantics:
+            it acts on the <b>lower body only</b>, its scale is <b>warmed up</b> from zero, and a
+            <b>self-tracking reward</b> keeps the corrected state close to the diffusion-predicted next state.
+            Prompts are randomly switched every 5&ndash;10&nbsp;s during training.
+            <br><br>
+            <span style="color: #0bbe05"><b>Noise steering for downstream tasks</b></span> &ndash; The same frozen prior is
+            reused by learning a policy that outputs the <b>diffusion input noise</b> conditioned on the task goal.
+            Different noise samples realize the same text command differently, so steering biases motion toward the
+            objective while staying inside the learned skill prior.
+          </p>
+
+          <figure class="content has-text-centered">
+            <img src="./static/images/ADAPT-Framework.png" class="is-fullwidth" alt="Method overview."/>
+            <p class="caption">
+              <b>Method overview.</b> We pretrain a text-conditioned diffusion skill prior on retargeted humanoid
+              motion data (A, B), then adapt it via two complementary mechanisms: residual RL corrects the prior's
+              actions to improve robustness for interactive control (C), while noise steering RL guides the frozen
+              prior toward task goals with controllable motion styles (D).
+            </p>
+          </figure>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== QUALITATIVE RESULTS ==================== -->
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+
+      <div class="columns is-centered has-text-centered">
+        <h2 class="title is-2">Results</h2>
+      </div>
+      <br>
+
+      <!-- ---------- Atomic skills carousel ---------- -->
+      <div class="column is-centered has-text-centered">
+        <h2 class="title is-3" id="atomic-skills" style="color:#f0a00c">
+          Text-driven atomic skills
+        </h2>
+      </div>
+      <div class="content has-text-justified">
+        <p class="subtitle has-text-centered">
+          A single policy executes diverse locomotion, exercise, and upper-body skills from language,
+          all deployed on a Unitree G1.
+        </p>
+      </div>
+
+      <div class="container">
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/walk-forward.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;walk forward&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/walk-backwards.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;walk backwards&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/walk-in-circle.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;walk in circle&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/jog-in-place.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;jog in place&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/jog-in-circle.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;jog in circle&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/sprint.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;sprint&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/step-backwards.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;step backwards&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/side-step-to-right.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;side step to the right&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/turn-left.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;turn left&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/squat.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;squat&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/raise-arms.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;raise arms&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/dance-around.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;dance around&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/drop-kick.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;drop kick&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/drop-kick-2.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;drop kick&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/atomic-clips/drop-kick-3.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;drop kick&rdquo;</p>
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- ---------- Interactive prompt switching ---------- -->
+      <div class="column is-centered has-text-centered">
+        <h2 class="title is-3" id="prompt-switching" style="color:#f0a00c">
+          Interactive prompt switching
+        </h2>
+      </div>
+      <div class="content has-text-justified">
+        <p class="subtitle has-text-centered">
+          Text commands change on the fly, and ADAPT transitions between skills without losing balance.
+        </p>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column">
+          <video class="lazy-video" muted loop playsinline controls preload="none" width="100%">
+            <source data-src="./static/videos/long-rollouts/sim-long-rollout.mp4" type="video/mp4">
+          </video>
+          <p class="has-text-centered caption">Long-horizon rollout in simulation with continuous command switching</p>
+        </div>
+        <div class="column">
+          <video class="lazy-video" muted loop playsinline controls preload="none" width="100%">
+            <source data-src="./static/videos/long-rollouts/real-long-rollout.mp4" type="video/mp4">
+          </video>
+          <p class="has-text-centered caption">Long-horizon rollout in the real world with continuous command switching</p>
+        </div>
+      </div>
+
+      <div class="content has-text-justified">
+        <p class="subtitle has-text-centered">
+          Individual transitions on hardware, shown in close-up.
+        </p>
+      </div>
+
+      <div class="container">
+        <div id="transitions-carousel" class="carousel results-carousel">
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/sprint-kick_left.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;sprint&rdquo; &rarr; &ldquo;kick left&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/jog_in_circle-squat.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;jog in circle&rdquo; &rarr; &ldquo;squat&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/kick_left-kick_right.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;kick left&rdquo; &rarr; &ldquo;kick right&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/squat-jump_rope.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;squat&rdquo; &rarr; &ldquo;jump rope&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/turn_around-spin.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;turn around&rdquo; &rarr; &ldquo;spin&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/raise_left-wave_left-wave_both.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;raise left arm&rdquo; &rarr; &ldquo;wave left&rdquo; &rarr; &ldquo;wave both&rdquo;</p>
+          </div>
+          <div class="item">
+            <video class="lazy-video" muted loop playsinline controls preload="none" height="100%">
+              <source data-src="./static/videos/sequential-clips/dance_around-walk_back-sprint.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered caption">&ldquo;dance around&rdquo; &rarr; &ldquo;walk backwards&rdquo; &rarr; &ldquo;sprint&rdquo;</p>
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- ---------- Goal reaching ---------- -->
+      <div class="column is-centered has-text-centered">
+        <h2 class="title is-3" id="goal-reaching" style="color:#f0a00c">
+          Goal reaching with motion styles
+        </h2>
+      </div>
+      <div class="content has-text-justified">
+        <p class="subtitle has-text-centered">
+          The same frozen diffusion prior is steered through its input noise to reach a target location
+          while preserving the text-specified style &mdash; <i>run</i>, <i>walk while bending over</i>, or the
+          unseen prompt <i>jog</i>.
+        </p>
+      </div>
+      <div class="columns is-centered">
+        <div class="column">
+          <video class="lazy-video" muted loop playsinline controls preload="none" width="100%">
+            <source data-src="./static/videos/goal-reaching/run.mp4" type="video/mp4">
+          </video>
+          <p class="has-text-centered caption">&ldquo;run&rdquo; to goal (green tape)</p>
+        </div>
+        <div class="column">
+          <video class="lazy-video" muted loop playsinline controls preload="none" width="100%">
+            <source data-src="./static/videos/goal-reaching/walk.mp4" type="video/mp4">
+          </video>
+          <p class="has-text-centered caption">&ldquo;walk while bending over&rdquo; to goal (green tape)</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <br>
+</section>
+
+
+<!-- ==================== BIBTEX ==================== -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <!-- TODO: update once the arXiv id is assigned -->
+    <pre><code>@article{wu2026adapt,
+  title={ADAPT: Agile Diffusion Action Priors for Robust and Steerable Online Text-Driven Humanoid Control},
+  author={Wu, Yan and Li, Chenhao and Zhao, Kaifeng and Li, Gen and Hutter, Marco and Tang, Siyu},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  year={2026}
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+            We use the website template provided by <a
+              href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

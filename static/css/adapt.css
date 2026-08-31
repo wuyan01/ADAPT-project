@@ -1,0 +1,124 @@
+/* ADAPT-specific styling on top of the Nerfies/Bulma template. */
+
+.publication-title {
+  font-size: 2.4rem;
+  line-height: 1.2;
+}
+
+.publication-authors {
+  margin-top: 0.6rem;
+}
+
+.conference {
+  margin-top: 0.8rem;
+  color: #555;
+}
+
+/* Videos ------------------------------------------------------------------ */
+
+video {
+  border-radius: 8px;
+  background: #ececec;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Placeholder look while a lazy video has not been fetched yet, and for
+   videos whose file is not present in static/videos yet. */
+video.lazy-video:not([data-loaded="true"]) {
+  min-height: 180px;
+}
+
+/* Captions ---------------------------------------------------------------- */
+
+.caption {
+  font-size: 0.9rem;
+  color: #4a4a4a;
+  margin-top: 0.5rem !important;
+  line-height: 1.45;
+}
+
+figure .caption {
+  margin-top: 0.75rem !important;
+  text-align: left;
+}
+
+/* index.css sets font-size: 0 on carousel items to kill inline-block gaps,
+   so captions inside a carousel need their size restored. */
+.results-carousel .item .caption {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem 0.6rem;
+  margin: 0 !important;
+  background: #fff;
+}
+
+.results-carousel .item {
+  background: #fff;
+}
+
+/* Result tables ----------------------------------------------------------- */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.results-table {
+  margin: 0 auto;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.results-table th {
+  text-align: center;
+  vertical-align: middle;
+  background: #fafafa;
+}
+
+.results-table td {
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.results-table td:first-child,
+.results-table th:first-child {
+  text-align: left;
+}
+
+.results-table .pm {
+  font-size: 0.72rem;
+  color: #7a7a7a;
+  margin-left: 1px;
+}
+
+.results-table .gt-row {
+  color: #7a7a7a;
+  background: #fbfbfb;
+}
+
+.results-table .ours-row {
+  background: #fff8e8;
+}
+
+.results-table .section-row td {
+  text-align: left;
+  background: #f5f5f5;
+  color: #555;
+}
+
+/* Figures ----------------------------------------------------------------- */
+
+figure img {
+  border-radius: 6px;
+}
+
+@media screen and (max-width: 768px) {
+  .publication-title {
+    font-size: 1.7rem;
+  }
+
+  .results-table {
+    font-size: 0.72rem;
+  }
+}
