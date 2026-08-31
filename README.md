@@ -53,7 +53,6 @@ Search `index.html` for `TODO`:
 - arXiv link and id (header button + BibTeX)
 - code repository link
 - venue line (currently commented out)
-- favicon
 
 ## Local preview
 
