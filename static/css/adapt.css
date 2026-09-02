@@ -369,6 +369,10 @@ a {
   transform: translateY(-2px);
 }
 
+.link-block a.hero-button .icon {
+  color: var(--orange);
+}
+
 .link-block a.hero-button-primary {
   background: var(--orange);
   border-color: var(--orange);
