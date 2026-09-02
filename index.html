@@ -157,7 +157,7 @@
         <span class="metric-label">End-to-end closed-loop control</span>
       </div>
       <div class="metric">
-        <span class="metric-value">~2 <small>ms</small></span>
+        <span class="metric-value">Real-time</span>
         <span class="metric-label">Policy inference</span>
       </div>
       <div class="metric">
@@ -282,8 +282,7 @@
         <p>
           An 8-layer causal transformer denoiser predicts joint future actions and proprioceptive states,
           conditioned on a frozen CLIP text embedding. Per-frame independent noise levels match the
-          autoregressive rollout at inference. Two DDIM steps give <b>~2&nbsp;ms</b> inference, enough for
-          <b>50&nbsp;Hz</b> closed-loop deployment.
+          autoregressive rollout at inference. Using two DDIM steps, the policy supports <b>50&nbsp;Hz</b> closed-loop deployment.
         </p>
       </article>
 
