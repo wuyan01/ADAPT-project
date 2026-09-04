@@ -341,6 +341,13 @@ a {
   margin-top: 0;
 }
 
+.conference {
+  color: var(--orange);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 0.85rem !important;
+}
+
 .publication-links {
   display: flex;
   flex-wrap: wrap;
