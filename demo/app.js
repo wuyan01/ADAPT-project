@@ -182,7 +182,7 @@ function renderState(changedMode) {
   $('status').textContent = state.error ? 'Reset needed' : state.running ? 'Running' : 'Paused';
   const minutes = Math.floor(state.time / 60), seconds = (state.time % 60).toFixed(2).padStart(5, '0');
   $('clock').textContent = `${String(minutes).padStart(2, '0')}:${seconds}`;
-  $('motion').textContent = state.text;
+  if ($('motion').textContent !== state.text) $('motion').textContent = state.text;
   $('inference').replaceChildren(document.createTextNode(state.inference_ms.toFixed(1)), Object.assign(document.createElement('small'), {textContent: ' ms'}));
   $('speed').replaceChildren(document.createTextNode(state.speed.toFixed(2)), Object.assign(document.createElement('small'), {textContent: ' ×'}));
   $('position').replaceChildren(document.createTextNode(state.position.slice(0, 2).map(v => v.toFixed(2)).join(', ')), Object.assign(document.createElement('small'), {textContent: ' m'}));
