@@ -92,18 +92,28 @@ async function loadPolicy(nextMode) {
     }
     if (offset !== bytes.length) throw Error('Incomplete policy download. Please reload.');
     progress('Preparing the policy on your device. This can take a moment…');
-    let backend = 'wasm', session;
-    if (requestedProvider !== 'wasm' && self.navigator.gpu) {
+    let backend = 'wasm', session, gpuUnavailable = false;
+    if (requestedProvider !== 'wasm') {
       try {
-        session = await ort.InferenceSession.create(bytes, {executionProviders: ['webgpu', 'wasm'], graphOptimizationLevel: 'all'});
+        if (!self.navigator.gpu) throw Error('This browser does not expose WebGPU.');
+        const adapter = await self.navigator.gpu.requestAdapter({powerPreference: 'high-performance'});
+        if (!adapter) throw Error('The browser could not access a GPU adapter.');
+        // Require successful WebGPU initialization. Listing wasm here allows ORT
+        // to silently initialize a CPU-only session when WebGPU is unavailable.
+        ort.env.webgpu.adapter = adapter;
+        session = await ort.InferenceSession.create(bytes, {executionProviders: ['webgpu'], graphOptimizationLevel: 'all'});
         backend = 'webgpu';
-      } catch (e) { progress('GPU initialization was unavailable. Loading the CPU version…'); }
+      } catch (e) {
+        gpuUnavailable = true;
+        console.warn('WebGPU unavailable; using CPU inference:', e.message);
+        progress('The browser could not initialize WebGPU. Loading CPU inference…');
+      }
     }
     if (!session) session = await ort.InferenceSession.create(bytes, {executionProviders: ['wasm'], graphOptimizationLevel: 'all'});
-    sessions.set(cacheKey, {session, backend});
+    sessions.set(cacheKey, {session, backend, gpuUnavailable});
   }
   mode = nextMode; policy = {...selected, ...sessions.get(cacheKey)}; reset();
-  emit({type: 'hello', commands: Object.fromEntries(Object.entries(manifest.policies).map(([key, p]) => [key, Object.keys(p.embeddings)])), backend: policy.backend});
+  emit({type: 'hello', commands: Object.fromEntries(Object.entries(manifest.policies).map(([key, p]) => [key, Object.keys(p.embeddings)])), backend: policy.backend, gpuUnavailable: policy.gpuUnavailable});
 }
 function state() {
   const {p, yaw} = pose();

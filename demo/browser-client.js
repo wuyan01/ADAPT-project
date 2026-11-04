@@ -21,7 +21,6 @@ window.createLocalSimulator = () => {
     const packet = event.data;
     if (packet.type === 'geometry') { view.geometry(packet.geoms); return; }
     if (packet.type === 'poses') { view.poses(packet); return; }
-    if (packet.type === 'hello') document.getElementById('connection').textContent = `On your device · ${packet.backend === 'webgpu' ? 'GPU (WebGPU)' : 'CPU'}`;
     if (packet.type === 'fatal') {
       document.getElementById('loading').hidden = false;
       document.getElementById('loading').textContent = packet.message;
@@ -29,7 +28,10 @@ window.createLocalSimulator = () => {
       packet.type = 'error';
     }
     simulator.onmessage?.({data: JSON.stringify(packet)});
-    if (packet.type === 'hello') document.getElementById('connection').textContent = `On your device · ${packet.backend === 'webgpu' ? 'GPU (WebGPU)' : 'CPU'}`;
+    if (packet.type === 'hello') {
+      document.getElementById('connection').textContent = `On your device · ${packet.backend === 'webgpu' ? 'GPU (WebGPU)' : packet.gpuUnavailable ? 'CPU · WebGPU unavailable' : 'CPU'}`;
+      if (packet.gpuUnavailable) document.getElementById('feedback').textContent = 'WebGPU is unavailable in this browser. Running on CPU; try Chrome or Edge with hardware acceleration enabled for GPU inference.';
+    }
   };
   worker.onerror = event => {
     const text = 'The browser could not start the local runtime. Please try an up-to-date Chrome or Edge browser.';
