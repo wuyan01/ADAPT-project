@@ -11,7 +11,9 @@ try {
 
 window.createLocalSimulator = () => {
   if (simulator) return simulator;
-  const worker = new Worker(new URL('./worker.js', import.meta.url), {type: 'module'});
+  const workerUrl = new URL('./worker.js', import.meta.url);
+  workerUrl.search = new URL(import.meta.url).search;
+  const worker = new Worker(workerUrl, {type: 'module'});
   simulator = {
     send(payload) { worker.postMessage(JSON.parse(payload)); },
     close() { worker.terminate(); simulator = null; },
@@ -45,4 +47,4 @@ document.getElementById('compute').addEventListener('change', event => simulator
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) simulator?.send(JSON.stringify({action: 'pause'}));
 });
-await import('./app.js');
+await import(`./app.js${new URL(import.meta.url).search}`);

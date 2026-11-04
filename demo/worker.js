@@ -98,6 +98,10 @@ async function loadPolicy(nextMode) {
         if (!self.navigator.gpu) throw Error('This browser does not expose WebGPU.');
         const adapter = await self.navigator.gpu.requestAdapter({powerPreference: 'high-performance'});
         if (!adapter) throw Error('The browser could not access a GPU adapter.');
+        const info = adapter.info;
+        console.info('[ADAPT GPU]', JSON.stringify({vendor: info?.vendor, architecture: info?.architecture,
+          device: info?.device, description: info?.description,
+          fallback: info?.isFallbackAdapter ?? adapter.isFallbackAdapter}));
         // Require successful WebGPU initialization. Listing wasm here allows ORT
         // to silently initialize a CPU-only session when WebGPU is unavailable.
         ort.env.webgpu.adapter = adapter;
