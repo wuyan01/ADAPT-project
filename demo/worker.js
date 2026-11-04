@@ -1,9 +1,10 @@
 import loadMujoco from './vendor/mujoco/mujoco.js';
 import * as ort from './vendor/onnx/ort.webgpu.bundle.min.mjs';
+import {createPolicyRunner} from './policy-runner.mjs';
 
-let mj, model, data, manifest, mode = 'text', requestedProvider = 'auto';
+let mj, model, data, manifest, mode = 'text', requestedProvider = 'wasm';
 let running = false, error = null, text = 'stand', activeText = 'walk', goal = null;
-let reached = false, insideSince = null, inferenceMs = 0, speed = 0, nextState = 0;
+let reached = false, insideSince = null, inferenceMs = 0, physicsMs = 0, speed = 0, nextState = 0;
 let history = {}, lastAction = new Float32Array(29), trail = [], seed = 42, fixedNoise;
 let policy, ids, motorIds, qposIds, qvelIds, root, base, randomSpare;
 const sessions = new Map(), commands = [];
@@ -37,7 +38,7 @@ function reset() {
   running = false; error = null; goal = null; reached = false; insideSince = null;
   text = 'stand'; activeText = policy.config.goal_monitor?.active_text_key || 'walk';
   history = {}; lastAction.fill(0); trail = []; seed = 42; fixedNoise = undefined; randomSpare = undefined;
-  inferenceMs = 0; speed = 0;
+  inferenceMs = 0; physicsMs = 0; speed = 0;
   mj.mj_resetData(model, data);
   data.qpos.set(manifest.reset_qpos);
   for (let i = 0; i < 29; i++) data.qpos[qposIds[i]] = policy.config.default_joint_pos[i];
@@ -92,7 +93,9 @@ async function loadPolicy(nextMode) {
     }
     if (offset !== bytes.length) throw Error('Incomplete policy download. Please reload.');
     progress('Preparing the policy on your device. This can take a moment…');
-    let backend = 'wasm', session, gpuUnavailable = false;
+    let backend = 'wasm', session, gpuUnavailable = false, graphCapture = false;
+    // onnxsim simplification does not replace ORT's provider-specific fusions.
+    const level = 'all';
     if (requestedProvider !== 'wasm') {
       try {
         if (!self.navigator.gpu) throw Error('This browser does not expose WebGPU.');
@@ -105,7 +108,16 @@ async function loadPolicy(nextMode) {
         // Require successful WebGPU initialization. Listing wasm here allows ORT
         // to silently initialize a CPU-only session when WebGPU is unavailable.
         ort.env.webgpu.adapter = adapter;
-        session = await ort.InferenceSession.create(bytes, {executionProviders: ['webgpu'], graphOptimizationLevel: 'all'});
+        // Graph capture records the whole forward pass once and replays it, removing per-kernel dispatch overhead,
+        // which dominates at batch 1. ORT only allows it when every node runs on WebGPU and shapes are static,
+        // so it rejects the original export (RandomNormalLike runs on the CPU) and we fall back to a normal session.
+        const base = {executionProviders: ['webgpu'], graphOptimizationLevel: level, logSeverityLevel: 2};
+        try {
+          session = await ort.InferenceSession.create(bytes, {...base, enableGraphCapture: true}); graphCapture = true;
+        } catch (e) {
+          console.info('[ADAPT GPU] graph capture unavailable for this model:', e.message);
+          session = await ort.InferenceSession.create(bytes, base);
+        }
         backend = 'webgpu';
       } catch (e) {
         gpuUnavailable = true;
@@ -113,8 +125,36 @@ async function loadPolicy(nextMode) {
         progress('The browser could not initialize WebGPU. Loading CPU inference…');
       }
     }
-    if (!session) session = await ort.InferenceSession.create(bytes, {executionProviders: ['wasm'], graphOptimizationLevel: 'all'});
-    sessions.set(cacheKey, {session, backend, gpuUnavailable});
+    if (!session) session = await ort.InferenceSession.create(bytes, {executionProviders: ['wasm'], graphOptimizationLevel: level, logSeverityLevel: 2});
+    // Extra graph inputs (noise tensors created by tools/optimize_policy.py) are filled from the seeded RNG every step.
+    const extras = session.inputNames.filter(name => name !== 'obs').map(name => {
+      let shape = selected.extra_inputs?.[name];
+      if (!shape && session.inputMetadata) shape = session.inputMetadata.find(m => m.name === name)?.shape;
+      if (!shape || shape.some(d => typeof d !== 'number')) throw Error(`Unknown shape for policy input "${name}". Add it to manifest.json → extra_inputs.`);
+      return {name, shape, size: shape.reduce((a, b) => a * b, 1)};
+    });
+    // Warm up: the first WebGPU run compiles shaders (can take seconds) and the capture happens on the first run too.
+    progress('Warming up the policy…');
+    const obsDim = nextMode === 'text' ? 1088 : 994;
+    const inputs = [{name: 'obs', shape: [1, obsDim]}, ...extras];
+    const warm = {obs: new Float32Array(obsDim)};
+    for (const x of extras) warm[x.name] = new Float32Array(x.size);
+    let runner;
+    try {
+      runner = createPolicyRunner(ort, session, inputs, graphCapture);
+      for (let i = 0; i < 3; i++) await runner.run(warm);
+    } catch (e) {
+      runner?.dispose();
+      if (!graphCapture) throw e;
+      // Some ORT builds only validate graph capture on the first run; recreate without it.
+      console.info('[ADAPT GPU] graph capture failed at run time, retrying without it:', e.message);
+      await session.release();
+      session = await ort.InferenceSession.create(bytes, {executionProviders: ['webgpu'], graphOptimizationLevel: level}); graphCapture = false;
+      runner = createPolicyRunner(ort, session, inputs, false);
+      for (let i = 0; i < 3; i++) await runner.run(warm);
+    }
+    console.info(`[ADAPT] ${nextMode} policy on ${backend}${graphCapture ? ' (graph capture)' : ''}, wasm threads: ${ort.env.wasm.numThreads}`);
+    sessions.set(cacheKey, {session, runner, backend, gpuUnavailable, graphCapture, extras});
   }
   mode = nextMode; policy = {...selected, ...sessions.get(cacheKey)}; reset();
   emit({type: 'hello', commands: Object.fromEntries(Object.entries(manifest.policies).map(([key, p]) => [key, Object.keys(p.embeddings)])), backend: policy.backend, gpuUnavailable: policy.gpuUnavailable});
@@ -124,7 +164,8 @@ function state() {
   return {type: 'state', mode, running, text, active_text: activeText, time: data.time,
     position: p, yaw, goal, distance: goal ? Math.hypot(goal[0] - p[0], goal[1] - p[1]) : null,
     goal_body: goal ? bodyGoal(p, yaw) : null, reached, threshold: policy.config.goal_monitor?.reached_distance ?? .5,
-    inference_ms: inferenceMs, speed: running ? speed : 0, error, trail: trail.filter((_, i) => i % 4 === 0), backend: policy.backend};
+    inference_ms: inferenceMs, physics_ms: physicsMs, speed: running ? speed : 0, error, trail: trail.filter((_, i) => i % 4 === 0), backend: policy.backend,
+    graph_capture: policy.graphCapture};
 }
 function sendState() {
   emit(state());
@@ -138,7 +179,9 @@ async function apply(cmd) {
     if (!['auto', 'wasm', 'webgpu'].includes(cmd.provider)) throw Error('Unknown compute device.');
     if (cmd.provider !== requestedProvider) {
       running = false;
-      for (const previous of sessions.values()) await previous.session.release();
+      for (const previous of sessions.values()) {
+        await previous.session.release(); previous.runner.dispose();
+      }
       sessions.clear();
     }
     requestedProvider = cmd.provider;
@@ -170,10 +213,16 @@ async function advance() {
     } else insideSince = null;
   }
   const obs = observation(), before = performance.now();
+  const feeds = {obs};
+  for (const x of policy.extras) {
+    const noise = new Float32Array(x.size);
+    for (let i = 0; i < x.size; i++) noise[i] = normal();
+    feeds[x.name] = noise;
+  }
   // Physics deliberately waits for the asynchronous local inference result.
-  const result = await policy.session.run({obs: new ort.Tensor('float32', obs, [1, obs.length])});
+  const actions = await policy.runner.run(feeds);
   inferenceMs = performance.now() - before;
-  const actions = result[policy.session.outputNames[0]].data;
+  const physicsStart = performance.now();
   if (actions.length !== 29 || !actions.every(Number.isFinite)) throw Error('Policy returned invalid actions.');
   const target = new Float64Array(29), actionCfg = cfg.actions.JointPositionAction;
   for (let i = 0; i < 29; i++) { lastAction[i] = actions[i]; target[cfg.joint_ids_map[i]] = actions[i]; }
@@ -183,6 +232,7 @@ async function advance() {
     mj.mj_step(model, data);
   }
   mj.mj_forward(model, data);
+  physicsMs = performance.now() - physicsStart;
   if (!data.qpos.every(Number.isFinite) || data.qpos[2] < .35) throw Error('Robot fell. Reset to try another command.');
   trail.push(pose().p.slice(0, 2)); if (trail.length > 1200) trail.shift();
   const dt = performance.now() - start;
@@ -228,7 +278,11 @@ async function init() {
     if (root < 0 || ids.some(i => i < 0)) throw Error('G1 joint mapping is incomplete.');
     qposIds = ids.map(i => model.jnt_qposadr[i]); qvelIds = ids.map(i => model.jnt_dofadr[i]);
     motorIds = ids.map(i => { for (let a = 0; a < model.nu; a++) if (model.actuator_trnid[a * 2] === i) return a; throw Error('Missing torque motor.'); });
-    ort.env.wasm.numThreads = 1;
+    // Multi-threaded WASM needs SharedArrayBuffer, which needs cross-origin isolation (COOP/COEP headers).
+    // GitHub Pages cannot send those headers, so coi-serviceworker.js injects them; without it ORT silently uses 1 thread.
+    const cores = self.navigator.hardwareConcurrency || 2;
+    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.max(1, Math.min(4, cores - 1)) : 1;
+    if (!self.crossOriginIsolated) console.warn('[ADAPT] Not cross-origin isolated: CPU inference is single-threaded.');
     ort.env.wasm.wasmPaths = new URL('./vendor/onnx/', import.meta.url).href;
     await loadPolicy('text'); geometry(); sendState();
     while (true) {

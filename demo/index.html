@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ADAPT · Live policy playground</title>
+  <script src="./coi-serviceworker.js"></script>
   <link rel="stylesheet" href="./style.css?v=ef1911d84323">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js"}}</script>
   <script type="module" src="./browser-client.js?v=ef1911d84323"></script>
@@ -15,8 +16,8 @@
     <section class="viewer panel" aria-label="Live simulation">
       <div class="panel-heading"><span class="diffusion-badge"><i class="live-indicator"></i> LIVE DIFFUSION POLICY</span><span id="status">Paused</span></div>
       <div class="stage"><img id="frame" alt="Live MuJoCo view of the G1 robot"><div id="loading">Loading MuJoCo and policy on your device…</div><div class="stage-top"><span id="mode-badge">Text-driven control</span><span id="clock">00:00.00</span></div><div class="stage-bottom"><div class="current-text" aria-live="polite"><span class="current-text-label">CURRENT TEXT</span><span id="motion">stand</span></div><span class="viewer-hint">Drag to orbit · Scroll to zoom</span></div></div>
-      <div class="transport"><label class="compute-label">Compute <select id="compute"><option value="auto">Auto (GPU if available)</option><option value="wasm">CPU</option><option value="webgpu">GPU (WebGPU)</option></select></label><button id="run" class="primary" disabled>▶ Run simulation</button><button id="reset" class="secondary" disabled>↺ Reset</button><span>Physics waits for every policy inference.</span></div>
-      <div class="metrics"><div><label>INFERENCE</label><strong id="inference">—<small> ms</small></strong></div><div><label>SIMULATION SPEED</label><strong id="speed">—<small> ×</small></strong></div><div><label>CONTROL RATE</label><strong>50<small> Hz · sim time</small></strong></div><div><label>POSITION · WORLD XY</label><strong id="position">0.00, 0.00<small> m</small></strong></div></div>
+      <div class="transport"><label class="compute-label">Compute <select id="compute"><option value="wasm" selected>CPU</option><option value="webgpu">GPU (WebGPU)</option><option value="auto">Auto (GPU if available)</option></select></label><button id="run" class="primary" disabled>▶ Run simulation</button><button id="reset" class="secondary" disabled>↺ Reset</button><span>Physics waits for every policy inference.</span></div>
+      <div class="metrics"><div><label>INFERENCE</label><strong id="inference">—<small> ms</small></strong></div><div><label>PHYSICS</label><strong id="physics">—<small> ms</small></strong></div><div><label>SIMULATION SPEED</label><strong id="speed">—<small> ×</small></strong></div><div><label>CONTROL RATE</label><strong>50<small> Hz · sim time</small></strong></div><div><label>POSITION · WORLD XY</label><strong id="position">0.00, 0.00<small> m</small></strong></div></div>
     </section>
     <aside class="controls panel">
       <div class="panel-heading">CONTROL LAB <span>01 / 02</span></div>

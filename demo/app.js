@@ -184,6 +184,7 @@ function renderState(changedMode) {
   $('clock').textContent = `${String(minutes).padStart(2, '0')}:${seconds}`;
   if ($('motion').textContent !== state.text) $('motion').textContent = state.text;
   $('inference').replaceChildren(document.createTextNode(state.inference_ms.toFixed(1)), Object.assign(document.createElement('small'), {textContent: ' ms'}));
+  if (state.physics_ms !== undefined) $('physics').replaceChildren(document.createTextNode(state.physics_ms.toFixed(1)), Object.assign(document.createElement('small'), {textContent: ' ms'}));
   $('speed').replaceChildren(document.createTextNode(state.speed.toFixed(2)), Object.assign(document.createElement('small'), {textContent: ' ×'}));
   $('position').replaceChildren(document.createTextNode(state.position.slice(0, 2).map(v => v.toFixed(2)).join(', ')), Object.assign(document.createElement('small'), {textContent: ' m'}));
   $('distance').replaceChildren(document.createTextNode(state.distance === null ? '—' : state.distance.toFixed(2)), Object.assign(document.createElement('small'), {textContent: ' m'}));

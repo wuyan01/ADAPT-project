@@ -11,16 +11,25 @@ export class View {
     this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     stage.append(this.renderer.domElement);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.target.set(0, 0, .75); this.controls.enableDamping = true;
     this.controls.minDistance = 1.5; this.controls.maxDistance = 15;
     this.controls.maxPolarAngle = Math.PI * .48;
     this.scene.add(new THREE.HemisphereLight('#e6f5e1', '#35422a', 2.3));
+    // The shadow frustum is a small box that follows the robot (see poses()); a fixed box at the
+    // origin leaves the rest of the floor unshadowed and the robot loses its shadow once it walks out.
     const sun = new THREE.DirectionalLight('#fff4dc', 3);
-    sun.position.set(3, -4, 8); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = -8; sun.shadow.camera.right = 8;
-    sun.shadow.camera.top = 8; sun.shadow.camera.bottom = -8; this.scene.add(sun);
+    this.sunOffset = new THREE.Vector3(3, -4, 8);
+    sun.position.copy(this.sunOffset); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -6; sun.shadow.camera.right = 6; sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 25;
+    // Bias removes the faint self-shadowing ("acne") on the flat floor that made the lit area inside
+    // the old frustum look darker than the floor outside it.
+    sun.shadow.bias = -0.0002; sun.shadow.normalBias = 0.02;
+    this.sun = sun; this.scene.add(sun); this.scene.add(sun.target);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshStandardMaterial({color: '#26372b', roughness: 1}));
     floor.receiveShadow = true; this.scene.add(floor);
     const grid = new THREE.GridHelper(100, 100, '#647154', '#394a38'); grid.rotation.x = Math.PI / 2; grid.position.z = .002; this.scene.add(grid);
@@ -56,6 +65,11 @@ export class View {
     }
     const next = new THREE.Vector3(packet.root[0], packet.root[1], Math.max(.5, packet.root[2]));
     const delta = next.clone().sub(this.controls.target); this.camera.position.add(delta); this.controls.target.copy(next);
+    // Move the light and its shadow box with the robot. Snapping to shadow-map texels avoids shimmering edges.
+    const texel = (this.sun.shadow.camera.right - this.sun.shadow.camera.left) / this.sun.shadow.mapSize.x;
+    const sx = Math.round(packet.root[0] / texel) * texel, sy = Math.round(packet.root[1] / texel) * texel;
+    this.sun.target.position.set(sx, sy, 0);
+    this.sun.position.set(sx + this.sunOffset.x, sy + this.sunOffset.y, this.sunOffset.z);
     this.goal.visible = !!packet.goal;
     if (packet.goal) { this.goal.position.set(...packet.goal, .008); this.goal.material.color.set(packet.reached ? '#a4db7a' : '#edbc75'); }
   }
