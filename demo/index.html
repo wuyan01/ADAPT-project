@@ -1,26 +1,48 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>ADAPT · Demo temporarily offline</title>
-  <style>
-    :root {color-scheme:dark;font-family:system-ui,sans-serif;background:#111810;color:#edf2e8}
-    body {margin:0;min-height:100vh;display:grid;place-items:center}
-    main {max-width:36rem;padding:2rem}
-    .brand {color:#a8c990;letter-spacing:.16em;font-size:.8rem}
-    h1 {font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15}
-    p {color:#bac6b3;line-height:1.7}
-    a {color:#c4e4aa;text-underline-offset:.25em}
-  </style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ADAPT · Live policy playground</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js"}}</script>
+  <script type="module" src="./browser-client.js"></script>
 </head>
 <body>
-  <main>
-    <p class="brand">ADAPT</p>
-    <h1>Demo temporarily offline</h1>
-    <p>We are updating the interactive demo to run policy inference on a server while keeping the model weights private.</p>
-    <p><a href="../">Back to the paper</a></p>
-  </main>
-</body>
-</html>
+<header><a class="brand" href="https://wuyan01.github.io/ADAPT-project/" aria-label="ADAPT project"><span class="brand-icon">p<span>h</span></span> ADAPT <span class="tag">PLAYGROUND</span></a><div class="connection"><span id="dot"></span><span id="connection">Loading on your device…</span></div></header>
+<main>
+  <div class="intro"><div><div class="eyebrow">LANGUAGE → MOTION</div><h1>Put words into motion.</h1><p>Run the actual ADAPT policies in your browser. First load downloads about 175 MB; goal mode loads its own policy.</p></div><span class="sim-tag">MuJoCo <span> / </span> 29 DOF</span></div>
+  <div class="workspace">
+    <section class="viewer panel" aria-label="Live simulation">
+      <div class="panel-heading"><span><i class="live-indicator"></i> LIVE SIMULATION</span><span id="status">Paused</span></div>
+      <div class="stage"><img id="frame" alt="Live MuJoCo view of the G1 robot"><div id="loading">Loading MuJoCo and policy on your device…</div><div class="stage-top"><span id="mode-badge">Text-driven control</span><span id="clock">00:00.00</span></div><div class="stage-bottom"><span id="motion">stand</span><span>Drag to orbit · Scroll to zoom</span></div></div>
+      <div class="transport"><label class="compute-label">Compute <select id="compute"><option value="auto">Auto (GPU if available)</option><option value="wasm">CPU</option><option value="webgpu">GPU (WebGPU)</option></select></label><button id="run" class="primary" disabled>▶ Run simulation</button><button id="reset" class="secondary" disabled>↺ Reset</button><span>Physics waits for every policy inference.</span></div>
+      <div class="metrics"><div><label>INFERENCE</label><strong id="inference">—<small> ms</small></strong></div><div><label>SIMULATION SPEED</label><strong id="speed">—<small> ×</small></strong></div><div><label>CONTROL RATE</label><strong>50<small> Hz · sim time</small></strong></div><div><label>POSITION · WORLD XY</label><strong id="position">0.00, 0.00<small> m</small></strong></div></div>
+    </section>
+    <aside class="controls panel">
+      <div class="panel-heading">CONTROL LAB <span>01 / 02</span></div>
+      <div class="tabs" role="tablist" aria-label="Policy"><button role="tab" aria-selected="true" id="text-tab" data-mode="text">Text control</button><button role="tab" aria-selected="false" id="goal-tab" data-mode="goal">Goal reaching</button></div>
+      <div class="control-content">
+        <div id="mode-copy"><h2>A motion for every word.</h2><p>Select a motion or search the available text commands. Changes apply while the policy runs.</p></div>
+        <label class="field-label" for="command">MOTION COMMAND <span id="command-count"></span></label>
+        <form id="text-form"><div class="input-row"><input id="command" type="text" role="combobox" aria-autocomplete="list" value="stand" placeholder="Search a motion…" autocomplete="off" aria-controls="suggestions" aria-expanded="false"><button class="apply" aria-label="Apply motion" disabled>↗</button></div></form>
+        <button id="browse-commands" type="button" class="text-button browse-commands" aria-controls="suggestions" aria-expanded="false" disabled>Browse all commands</button>
+        <div id="suggestions" role="listbox" aria-label="Matching motion commands" hidden></div>
+        <div id="preset-heading" class="preset-heading">QUICK PICKS</div>
+        <div class="presets" id="presets" aria-label="Motion presets"></div>
+        <p class="hint" id="text-hint">Only commands from the training text set are available.</p>
+        <section id="goal-controls" hidden>
+          <div class="rule"></div><div class="map-heading"><label class="field-label">PLACE A GOAL</label><span>Click the map</span></div>
+          <canvas id="map" height="300" aria-label="Goal map: click to set a world-coordinate goal"></canvas>
+          <form id="goal-form"><div class="coordinates"><label>X <input id="goal-x" type="number" min="-50" max="50" step="0.1" value="2" required></label><label>Y <input id="goal-y" type="number" min="-50" max="50" step="0.1" value="0" required></label><button class="secondary" disabled>Set goal</button></div></form>
+          <div class="goal-readout"><div><label>DISTANCE TO GOAL</label><strong id="distance">—<small> m</small></strong></div><span id="goal-status">No goal</span></div>
+          <div class="goal-meta"><span id="goal-body">Body offset: —</span><button id="clear-goal" class="text-button" disabled>Clear goal</button></div>
+          <p class="hint">Ground truth from MuJoCo. The policy receives the goal offset in the robot’s yaw frame. Stands after reaching <span id="threshold">0.5</span> m for 0.3 s.</p>
+        </section>
+        <div id="feedback" role="status" aria-live="polite">Ready when you are. Choose a motion, then press Run.</div>
+      </div>
+      <div class="control-footer"><span class="small-dot"></span> ON YOUR DEVICE <span>No hardware connection</span></div>
+    </aside>
+  </div>
+  <footer><span>ADAPT <span class="muted">/ Interactive policy explorer</span></span><span>Your own simulation · CPU or GPU inference · No simulation server.</span></footer>
+</main>
+</body></html>
