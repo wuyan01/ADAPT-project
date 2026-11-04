@@ -68,7 +68,7 @@ function updatePresets() {
   presetSignature = signature;
   $('presets').replaceChildren();
   const available = currentCommands();
-  const presets = state?.mode === 'goal' ? ['walk', 'walk while bend over', 'jog', 'jog in place', 'stand'] : ['tpose', 'apose', 'wave left hand', 'arm circles', 'clap', 'shoot a bow', 'throw a ball', 'spin', 'walk back', 'look back', 'squat', 'backward right punch', 'jog in circle', 'sprint in place', 'drop kick', 'kick left leg', 'kick right leg', 'dance around', 'side step to left', 'crouch with hands up side step to right series', 'hop on one foot', 'jump rope'];
+  const presets = state?.mode === 'goal' ? ['walk', 'walk while bend over', 'jog', 'jog in place', 'stand'] : ['tpose', 'apose', 'wave left hand', 'arm circles', 'clap', 'shoot a bow', 'throw a ball', 'spin', 'walk back', 'look back', 'squat', 'backward right punch', 'jog in circle', 'sprint in place', 'drop kick', 'kick left leg', 'kick right leg', 'dance around', 'side step to right', 'crouch with hands up side step to left series', 'hop on one foot', 'jump rope'];
   for (const label of presets) {
     // Preserve the requested button wording while applying the exact trained key.
     const text = label === 'backward right punch' ? 'backwards right punch' : label;
