@@ -68,10 +68,15 @@ function updatePresets() {
   presetSignature = signature;
   $('presets').replaceChildren();
   const available = currentCommands();
-  const presets = state?.mode === 'goal' ? ['walk', 'walk while bend over', 'jog', 'jog in place', 'stand'] : ['tpose', 'apose', 'wave left hand', 'wave right hand', 'jog in circle', 'sprint in place', 'forward right punch', 'drop kick', 'dance around'];
-  for (const text of presets.filter(text => available.includes(text))) {
+  const presets = state?.mode === 'goal' ? ['walk', 'walk while bend over', 'jog', 'jog in place', 'stand'] : ['tpose', 'apose', 'wave left hand', 'arm circles', 'clap', 'shoot a bow', 'throw a ball', 'spin', 'walk back', 'look back', 'squat', 'backward right punch', 'jog in circle', 'sprint in place', 'drop kick', 'kick left leg', 'kick right leg', 'dance around', 'side step to left', 'crouch with hands up side step to right series', 'hop on one foot', 'jump rope'];
+  for (const label of presets) {
+    // Preserve the requested button wording while applying the exact trained key.
+    const text = label === 'backward right punch' ? 'backwards right punch' : label;
+    if (!available.includes(text)) continue;
     const button = document.createElement('button');
-    button.textContent = text;
+    button.textContent = label;
+    button.dataset.command = text;
+    if (label !== text) button.title = `Training command: ${text}`;
     button.classList.toggle('selected', text === (state?.mode === 'goal' ? state?.active_text : state?.text));
     button.onclick = () => applyText(text);
     $('presets').append(button);
