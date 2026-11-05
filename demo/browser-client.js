@@ -1,11 +1,19 @@
 import {View} from './view.js';
+import {isMobileDevice} from './runtime-profile.mjs';
+
+if (isMobileDevice(navigator)) {
+  const compute = document.getElementById('compute');
+  for (const option of [...compute.options]) if (option.value !== 'wasm') option.remove();
+  compute.disabled = true;
+  document.querySelector('.viewer-hint').textContent = 'Drag to orbit · Pinch to zoom';
+}
 
 let view, simulator;
 try {
   document.getElementById('frame').hidden = true;
   view = new View(document.querySelector('.stage'));
 } catch (e) {
-  document.getElementById('loading').textContent = 'This demo needs WebGL graphics. Try a current desktop browser with hardware acceleration enabled.';
+  document.getElementById('loading').textContent = 'This browser could not start 3D graphics. Try an updated Safari or Chrome browser.';
   throw e;
 }
 
@@ -36,7 +44,8 @@ window.createLocalSimulator = () => {
     }
   };
   worker.onerror = event => {
-    const text = 'The browser could not start the local runtime. Please try an up-to-date Chrome or Edge browser.';
+    const text = 'The browser could not start the simulation. Update your browser and try again. If this keeps happening, try another device.';
+    document.getElementById('loading').hidden = false;
     document.getElementById('loading').textContent = text;
     simulator.onmessage?.({data: JSON.stringify({type: 'error', message: text})});
     console.error(event.message);

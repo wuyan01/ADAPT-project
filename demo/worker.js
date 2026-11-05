@@ -1,6 +1,10 @@
 import loadMujoco from './vendor/mujoco/mujoco.js';
-import * as ort from './vendor/onnx/ort.webgpu.bundle.min.mjs';
 import {createPolicyRunner} from './policy-runner.mjs';
+import {isMobileDevice} from './runtime-profile.mjs';
+import {downloadPolicy} from './download-policy.mjs';
+
+const mobileDevice = isMobileDevice(self.navigator);
+let ort;
 
 let mj, model, data, manifest, mode = 'text', requestedProvider = 'wasm';
 let running = false, error = null, text = 'stand', activeText = 'walk', goal = null;
@@ -84,19 +88,26 @@ async function loadPolicy(nextMode) {
   const selected = manifest.policies[nextMode];
   const cacheKey = `${nextMode}:${requestedProvider}`;
   if (!sessions.has(cacheKey)) {
-    const bytes = new Uint8Array(selected.bytes); let offset = 0;
-    for (const part of selected.parts) {
-      progress(`Loading ${nextMode === 'text' ? 'text' : 'goal'} policy: ${Math.round(offset / selected.bytes * 100)}% · ${(selected.bytes / 1024**2).toFixed(0)} MB on your device`);
-      const response = await fetch(new URL(part, import.meta.url));
-      if (!response.ok) throw Error(`Policy download failed (${response.status}). Please reload.`);
-      const chunk = new Uint8Array(await response.arrayBuffer()); bytes.set(chunk, offset); offset += chunk.length;
+    // Phones retain one policy at a time, releasing its weights before allocating
+    // the next model's download and inference session.
+    if (mobileDevice) {
+      for (const previous of sessions.values()) {
+        await previous.session.release(); previous.runner.dispose();
+      }
+      sessions.clear();
     }
-    if (offset !== bytes.length) throw Error('Incomplete policy download. Please reload.');
+    let reportedPercent = -1;
+    const bytes = await downloadPolicy(selected, import.meta.url, (loaded, total) => {
+      const percent = Math.floor(loaded / total * 100);
+      if (percent === reportedPercent) return;
+      reportedPercent = percent;
+      progress(`Loading ${nextMode === 'text' ? 'text' : 'goal'} policy: ${percent}% · ${(total / 1024**2).toFixed(0)} MB on your device`);
+    });
     progress('Preparing the policy on your device. This can take a moment…');
     let backend = 'wasm', session, gpuUnavailable = false, graphCapture = false;
     // onnxsim simplification does not replace ORT's provider-specific fusions.
     const level = 'all';
-    if (requestedProvider !== 'wasm') {
+    if (requestedProvider !== 'wasm' && !mobileDevice) {
       try {
         if (!self.navigator.gpu) throw Error('This browser does not expose WebGPU.');
         const adapter = await self.navigator.gpu.requestAdapter({powerPreference: 'high-performance'});
@@ -165,7 +176,8 @@ function state() {
     position: p, yaw, goal, distance: goal ? Math.hypot(goal[0] - p[0], goal[1] - p[1]) : null,
     goal_body: goal ? bodyGoal(p, yaw) : null, reached, threshold: policy.config.goal_monitor?.reached_distance ?? .5,
     inference_ms: inferenceMs, physics_ms: physicsMs, speed: running ? speed : 0, error, trail: trail.filter((_, i) => i % 4 === 0), backend: policy.backend,
-    graph_capture: policy.graphCapture};
+    graph_capture: policy.graphCapture, runtime_profile: mobileDevice ? 'mobile' : 'desktop',
+    physics_heap_mb: data.qpos.buffer.byteLength / 1024**2};
 }
 function sendState() {
   emit(state());
@@ -177,6 +189,7 @@ async function apply(cmd) {
     await loadPolicy(cmd.mode);
   } else if (cmd.action === 'provider') {
     if (!['auto', 'wasm', 'webgpu'].includes(cmd.provider)) throw Error('Unknown compute device.');
+    if (mobileDevice && cmd.provider === 'webgpu') throw Error('This phone demo uses CPU inference.');
     if (cmd.provider !== requestedProvider) {
       running = false;
       for (const previous of sessions.values()) {
@@ -257,16 +270,46 @@ function geometry() {
 }
 async function init() {
   try {
+    progress('Loading the inference runtime…');
+    // Avoid the GPU-enabled asyncify/JSEP runtime on phones, including CPU runs.
+    ort = await import(mobileDevice ? './vendor/onnx/ort.wasm.bundle.min.mjs' : './vendor/onnx/ort.webgpu.bundle.min.mjs');
     manifest = await json('./manifest.json');
     progress('Loading MuJoCo physics on your device…');
     mj = await loadMujoco();
     mj.FS.mkdirTree('/robot/meshes');
-    await Promise.all(manifest.robot_files.map(async path => {
-      const response = await fetch(new URL(path, import.meta.url));
-      if (!response.ok) throw Error(`Could not load robot asset (${response.status}).`);
-      mj.FS.writeFile('/robot/' + path.replace('assets/robot/', ''), new Uint8Array(await response.arrayBuffer()));
-    }));
-    model = mj.MjModel.from_xml_path('/robot/g1.xml');
+    if (mobileDevice && manifest.robot_binary && typeof DecompressionStream === 'function') {
+      // The MJB was compiled with this same WASM binary, preserving the exact
+      // geometry/dynamics while avoiding XML/mesh compiler temporary allocations.
+      let reported = -1;
+      const binary = await downloadPolicy(manifest.robot_binary, import.meta.url, (loaded, total) => {
+        const percent = Math.floor(loaded / total * 100);
+        if (percent !== reported) { reported = percent; progress(`Loading the robot: ${percent}%…`); }
+      }, async url => {
+        const response = await fetch(url);
+        if (!response.ok) return response;
+        return new Response(response.body.pipeThrough(new DecompressionStream('gzip')));
+      });
+      mj.FS.writeFile('/robot/g1.mjb', binary, {canOwn: true});
+      const vfs = new mj.MjVFS();
+      progress('Preparing the robot for simulation…');
+      try { model = mj.MjModel.from_binary_path('/robot/g1.mjb', vfs); }
+      finally { vfs.delete(); mj.FS.unlink('/robot/g1.mjb'); }
+    } else {
+      let robotFilesLoaded = 0;
+      const parallelDownloads = mobileDevice ? 4 : manifest.robot_files.length;
+      for (let offset = 0; offset < manifest.robot_files.length; offset += parallelDownloads) {
+        await Promise.all(manifest.robot_files.slice(offset, offset + parallelDownloads).map(async path => {
+          const response = await fetch(new URL(path, import.meta.url));
+          if (!response.ok) throw Error(`Could not load robot asset (${response.status}).`);
+          mj.FS.writeFile('/robot/' + path.replace('assets/robot/', ''), new Uint8Array(await response.arrayBuffer()));
+          progress(`Loading the robot: ${++robotFilesLoaded} / ${manifest.robot_files.length} files…`);
+        }));
+      }
+      progress('Preparing the robot for simulation…');
+      model = mj.MjModel.from_xml_path('/robot/g1.xml');
+      // The compiled model owns its mesh data; raw STL/XML files are no longer needed.
+      for (const path of manifest.robot_files) mj.FS.unlink('/robot/' + path.replace('assets/robot/', ''));
+    }
     model.opt.timestep = .002;
     for (let i = 0; i < model.ngeom; i++) if (model.geom_contype[i] || model.geom_conaffinity[i]) {
       model.geom_contype[i] = model.geom_bodyid[i] ? 1 : 2;
@@ -281,7 +324,7 @@ async function init() {
     // Multi-threaded WASM needs SharedArrayBuffer, which needs cross-origin isolation (COOP/COEP headers).
     // GitHub Pages cannot send those headers, so coi-serviceworker.js injects them; without it ORT silently uses 1 thread.
     const cores = self.navigator.hardwareConcurrency || 2;
-    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.max(1, Math.min(4, cores - 1)) : 1;
+    ort.env.wasm.numThreads = mobileDevice ? 1 : self.crossOriginIsolated ? Math.max(1, Math.min(4, cores - 1)) : 1;
     if (!self.crossOriginIsolated) console.warn('[ADAPT] Not cross-origin isolated: CPU inference is single-threaded.');
     ort.env.wasm.wasmPaths = new URL('./vendor/onnx/', import.meta.url).href;
     await loadPolicy('text'); geometry(); sendState();

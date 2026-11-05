@@ -1,15 +1,17 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/three/OrbitControls.js';
+import {isMobileDevice} from './runtime-profile.mjs';
 
 export class View {
   constructor(stage) {
+    const mobileDevice = isMobileDevice(navigator);
     this.stage = stage; this.meshes = new Map(); this.target = new THREE.Vector3();
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#111c18');
     this.scene.fog = new THREE.Fog('#111c18', 18, 55);
     this.camera = new THREE.PerspectiveCamera(45, 1, .05, 150);
     this.camera.up.set(0, 0, 1); this.camera.position.set(2.8, -2.8, 1.7);
-    this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({antialias: !mobileDevice, alpha: false});
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, mobileDevice ? 1 : 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     stage.append(this.renderer.domElement);
@@ -23,7 +25,8 @@ export class View {
     const sun = new THREE.DirectionalLight('#fff4dc', 3);
     this.sunOffset = new THREE.Vector3(3, -4, 8);
     sun.position.copy(this.sunOffset); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    const shadowSize = mobileDevice ? 512 : 2048;
+    sun.shadow.mapSize.set(shadowSize, shadowSize);
     sun.shadow.camera.left = -6; sun.shadow.camera.right = 6; sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 25;
     // Bias removes the faint self-shadowing ("acne") on the flat floor that made the lit area inside
@@ -39,7 +42,12 @@ export class View {
       const {width, height} = stage.getBoundingClientRect();
       this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix();
     }); this.resize.observe(stage);
-    this.renderer.setAnimationLoop(() => { this.controls.update(); this.renderer.render(this.scene, this.camera); });
+    let lastFrame = -Infinity;
+    this.renderer.setAnimationLoop(time => {
+      if (document.hidden || (mobileDevice && time - lastFrame < 1000 / 30)) return;
+      lastFrame = time;
+      this.controls.update(); this.renderer.render(this.scene, this.camera);
+    });
   }
   geometry(geoms) {
     for (const item of geoms) {

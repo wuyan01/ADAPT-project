@@ -1,5 +1,42 @@
 # ADAPT demo: inference speed + shadow patch
 
+## Phone reliability follow-up (2026-11-04)
+
+The original demo can run on iPhone Chrome, but the reported tab reload / "Cannot
+open this page" after a few seconds is consistent with browser memory pressure.
+This is a working diagnosis, not a crash-log confirmation.
+
+Phones/tablets now load a CPU-only ORT 1.23.2 runtime, use one inference thread,
+and retain one policy session at a time. The desktop runtime and GPU options are
+unchanged. This also avoids the GPU-enabled runtime path discussed in
+[ORT's Safari memory issue](https://github.com/microsoft/onnxruntime/issues/26827).
+Policy downloads stream directly into their final allocation, avoiding a separate
+48 MiB part buffer. Loading now reports progress within parts and during robot loading.
+
+On modern phones, the robot loads from a gzip-compressed MJB compiled with the
+bundled MuJoCo WASM. It uses the same geometry, inertia and contact model. This
+reduces MuJoCo's startup heap from 450.875 MiB for XML/STL compilation to 153.625 MiB
+in a fresh runtime; those are physics heap measurements, not total tab memory.
+The compressed asset is about 35.6 MiB. Browsers without `DecompressionStream`
+use the existing XML path. Rebuild the MJB whenever the robot or MuJoCo changes:
+
+```sh
+node demo/tools/compile-robot.mjs
+```
+
+The build checks geometry and 250 contact simulation steps against the XML model;
+positions and velocities match exactly. Rendering on phones uses pixel ratio 1,
+512-pixel shadow maps, no multisample antialiasing, and a 30 fps cap. Touch controls
+remain available. Source robot files are released after XML compilation.
+
+Validation: six runner/loading tests pass (`node --test demo/tools/*.test.mjs`).
+Chrome with a persistent iPhone user agent and 390-pixel touch viewport loaded and
+ran both policies, switched back to text mode, and had no horizontal page overflow.
+A separate 20-second run advanced 15.56 simulated seconds without errors, while
+the physics heap stayed at 153.625 MiB. Desktop CPU and mode-switching smoke checks
+also passed. Chrome emulation is not a real iPhone or WebKit memory-limit test;
+the published version still needs to be retested on the user's device.
+
 ## Validated inference follow-up (2026-11-04)
 
 The manifest now points to regenerated FP32 graphs with external noise inputs, ORT basic
